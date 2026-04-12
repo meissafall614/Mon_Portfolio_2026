@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meissa Fall — Développeur Web & Mobile</title>
+  <meta name="description" content="Portfolio de Meissa Fall, étudiant en Génie Informatique à UNIPRO Dakar. DUT Développement Web & Mobile — UCAD."/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Syne','sans-serif'],
+            body:    ['Outfit','sans-serif'],
+            mono:    ['"JetBrains Mono"','monospace'],
+          },
+          animation: {
+            'float':     'floatAnim 5s ease-in-out infinite',
+            'float2':    'floatAnim 7s ease-in-out infinite reverse',
+            'spin-slow': 'spin 25s linear infinite',
+          },
+          keyframes: {
+            floatAnim: {
+              '0%,100%': {transform:'translateY(0) rotate(0deg)'},
+              '50%':     {transform:'translateY(-18px) rotate(3deg)'},
+            },
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:'Outfit',sans-serif;background:#faf8f5;color:#1a1410;overflow-x:hidden}
+
+    /* ── CANVAS ── */
+    #hero-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+
+    /* ── GRADIENT TEXT ── */
+    .grad{background:linear-gradient(135deg,#c0392b 0%,#8b7355 60%,#1a6b8a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .grad-ocean{background:linear-gradient(135deg,#1a6b8a,#2d6a4f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+    /* ── SURFACE ── */
+    .card{background:#fff;border:1px solid #e8e0d4;box-shadow:0 2px 12px rgba(0,0,0,.06);border-radius:20px;transition:all .4s cubic-bezier(.16,1,.3,1)}
+    .card:hover{border-color:#c8bfb0;box-shadow:0 8px 40px rgba(0,0,0,.1);transform:translateY(-4px)}
+
+    /* ── 3D TILT ── */
+    .tilt{perspective:800px}
+    .tilt-inner{transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s ease;transform-style:preserve-3d;border-radius:20px}
+    .tilt:hover .tilt-inner{transform:rotateY(-6deg) rotateX(4deg) translateZ(12px);box-shadow:18px 18px 50px rgba(0,0,0,.1),-4px -4px 18px rgba(255,255,255,.8)}
+
+    /* ── NAV ── */
+    .nav-bar{background:rgba(250,248,245,.93);backdrop-filter:blur(20px);border-bottom:1px solid #e8e0d4}
+    .nl{color:#6b6058;font-size:.875rem;font-weight:500;position:relative;transition:color .3s}
+    .nl::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;background:#c0392b;border-radius:9999px;transition:width .3s ease}
+    .nl:hover,.nl.active{color:#1a1410}
+    .nl:hover::after,.nl.active::after{width:100%}
+
+    /* ── BUTTONS ── */
+    .btn-ink{background:#1a1410;color:#faf8f5;transition:all .3s ease;position:relative;overflow:hidden}
+    .btn-ink span{position:relative;z-index:1}
+    .btn-ink::before{content:'';position:absolute;inset:0;background:#c0392b;transform:scaleX(0);transform-origin:left;transition:transform .4s ease}
+    .btn-ink:hover::before{transform:scaleX(1)}
+    .btn-ink:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(192,57,43,.3)}
+    .btn-out{border:1.5px solid #c8bfb0;color:#1a1410;transition:all .3s ease}
+    .btn-out:hover{border-color:#1a1410;background:#1a1410;color:#faf8f5;transform:translateY(-2px)}
+
+    /* ── AOS ── */
+    [data-aos]{opacity:0;transform:translateY(36px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+    [data-aos].on{opacity:1;transform:translateY(0)}
+    [data-aos][data-d="1"]{transition-delay:.1s}
+    [data-aos][data-d="2"]{transition-delay:.2s}
+    [data-aos][data-d="3"]{transition-delay:.3s}
+    [data-aos][data-d="4"]{transition-delay:.4s}
+    [data-aos][data-d="5"]{transition-delay:.5s}
+
+    /* ── SKILL BAR ── */
+    .sk-track{height:6px;background:#e8e0d4;border-radius:9999px;overflow:hidden}
+    .sk-fill{height:100%;border-radius:9999px;width:0;transition:width 1.4s cubic-bezier(.16,1,.3,1)}
+
+    /* ── LANG BAR ── */
+    .la-track{height:8px;background:#e8e0d4;border-radius:9999px;overflow:hidden}
+    .la-fill{height:100%;border-radius:9999px;background:linear-gradient(90deg,#c0392b,#8b7355);width:0;transition:width 1.2s cubic-bezier(.16,1,.3,1)}
+
+    /* ── TIMELINE ── */
+    .tl-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:5px}
+    .tl-line{width:2px;flex-shrink:0;margin-left:6px}
+
+    /* ── MISC ── */
+    .slabel{font-family:'JetBrains Mono',monospace;font-size:.7rem;text-transform:uppercase;letter-spacing:.2em;color:#c0392b}
+    .tag{background:#f0ece4;border:1px solid #e8e0d4;color:#6b6058;font-size:.68rem;font-weight:600;padding:3px 10px;border-radius:9999px;font-family:'JetBrains Mono',monospace;transition:all .2s;display:inline-block}
+    .tag:hover{background:#1a1410;color:#faf8f5;border-color:#1a1410}
+    .divider{height:1px;background:linear-gradient(90deg,transparent,#e8e0d4,transparent)}
+    .form-fld{background:#faf8f5;border:1.5px solid #e8e0d4;transition:all .3s ease;outline:none;color:#1a1410}
+    .form-fld:focus{border-color:#1a1410;box-shadow:0 0 0 4px rgba(26,20,16,.06);background:#fff}
+    .form-fld::placeholder{color:#c8bfb0}
+    .cursor-blink{animation:blink 1s step-end infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+    .proj-ov{position:absolute;inset:0;background:rgba(26,20,16,.82);opacity:0;transition:opacity .4s;display:flex;align-items:center;justify-content:center;border-radius:16px 16px 0 0}
+    .proj-wrap:hover .proj-ov{opacity:1}
+    .cert-card{background:#fff;border:1px solid #e8e0d4;border-left:3px solid #c0392b;border-radius:12px;padding:16px 20px;transition:all .3s}
+    .cert-card:hover{border-left-color:#1a6b8a;transform:translateX(4px);box-shadow:0 4px 20px rgba(0,0,0,.08)}
+    .social-ico{width:38px;height:38px;border-radius:10px;border:1.5px solid #e8e0d4;display:flex;align-items:center;justify-content:center;color:#6b6058;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;background:#fff;transition:all .3s}
+    .social-ico:hover{background:#1a1410;color:#faf8f5;border-color:#1a1410;transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.15)}
+    #loading{transition:opacity .6s ease,visibility .6s ease}
+    #loading.out{opacity:0;visibility:hidden}
+    ::-webkit-scrollbar{width:4px}
+    ::-webkit-scrollbar-track{background:#f0ece4}
+    ::-webkit-scrollbar-thumb{background:#8b7355;border-radius:9999px}
+    .hero-bg{min-height:100vh;background:radial-gradient(ellipse 900px 600px at 80% 10%,rgba(192,57,43,.07) 0%,transparent 70%),radial-gradient(ellipse 600px 500px at 10% 80%,rgba(26,107,138,.05) 0%,transparent 60%),#faf8f5;position:relative;overflow:hidden}
+    .noise-ov::after{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");pointer-events:none;border-radius:inherit}
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ LOADING ═══════════ -->
+<div id="loading" class="fixed inset-0 z-[9999] bg-[#faf8f5] flex flex-col items-center justify-center">
+  <div class="relative mb-8">
+    <div class="w-20 h-20 rounded-2xl bg-[#1a1410] flex items-center justify-center shadow-xl">
+      <span style="font-family:Syne;font-size:1.8rem;font-weight:800;color:#faf8f5">MF</span>
+    </div>
+    <div class="absolute -inset-2 rounded-2xl border-2 border-dashed border-[#e8e0d4] animate-spin-slow"></div>
+  </div>
+  <div class="flex items-center gap-1 font-mono text-sm text-[#6b6058] mb-6">
+    <span id="load-text"></span><span class="cursor-blink text-[#c0392b]">|</span>
+  </div>
+  <div class="w-56 h-1 bg-[#e8e0d4] rounded-full overflow-hidden">
+    <div id="load-bar" class="h-full bg-[#1a1410] rounded-full" style="width:0%;transition:width .15s ease"></div>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<header class="nav-bar fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+    <a href="#hero" class="flex items-center gap-3 group">
+      <div class="w-9 h-9 rounded-xl bg-[#1a1410] flex items-center justify-center group-hover:bg-[#c0392b] transition-colors duration-300">
+        <span style="font-family:Syne;font-size:.8rem;font-weight:800;color:#faf8f5">MF</span>
+      </div>
+      <span style="font-family:Syne;font-weight:700;color:#1a1410" class="hidden sm:block">Meissa Fall</span>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-7">
+      <a href="#about"      class="nl">À propos</a>
+      <a href="#formation"  class="nl">Formation</a>
+      <a href="#skills"     class="nl">Compétences</a>
+      <a href="#projects"   class="nl">Projets</a>
+      <a href="#contact"    class="nl">Contact</a>
+    </nav>
+        
+    <div class="flex items-center gap-2">
+      
+      <button id="mob-btn" class="md:hidden w-9 h-9 rounded-xl border border-[#e8e0d4] flex items-center justify-center text-[#6b6058] hover:text-[#1a1410] hover:border-[#1a1410] transition-colors">
+        <svg id="ico-open" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <svg id="ico-close" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>  
+    </div>
+  </div>
+  <div id="mob-menu" class="hidden md:hidden border-t border-[#e8e0d4] bg-[#faf8f5]">
+    <nav class="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-1">
+      <a href="#about"      class="nl py-2 px-3 rounded-lg hover:bg-[#f0ece4]">À propos</a>
+      <a href="#formation"  class="nl py-2 px-3 rounded-lg hover:bg-[#f0ece4]">Formation</a>
+      <a href="#skills"     class="nl py-2 px-3 rounded-lg hover:bg-[#f0ece4]">Compétences</a>
+      <a href="#projects"   class="nl py-2 px-3 rounded-lg hover:bg-[#f0ece4]">Projets</a>
+      <a href="#contact"    class="nl py-2 px-3 rounded-lg hover:bg-[#f0ece4]">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section id="hero" class="hero-bg flex items-center pt-16">
+  <canvas id="hero-canvas"></canvas>
+  <!-- Blobs -->
+  <div class="absolute pointer-events-none" style="width:350px;height:350px;background:rgba(192,57,43,.06);top:8%;right:4%;filter:blur(50px);border-radius:30% 70% 70% 30%/30% 30% 70% 70%;animation:floatAnim 6s ease-in-out infinite"></div>
+  <div class="absolute pointer-events-none" style="width:250px;height:250px;background:rgba(26,107,138,.06);bottom:12%;left:4%;filter:blur(40px);border-radius:70% 30% 30% 70%/70% 70% 30% 30%;animation:floatAnim 8s ease-in-out infinite reverse"></div>
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 w-full py-20 relative z-10">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+
+      <div class="space-y-8" data-aos>
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#e8e0d4] bg-white/80 text-xs font-mono text-[#8b7355] shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+          Disponible · Dakar, Sénégal
+        </div>
+
+        <div class="space-y-3">
+          <p class="font-mono text-xs text-[#6b6058] uppercase tracking-widest">Bonjour, je suis</p>
+          <h1 style="font-family:Syne;font-size:clamp(3rem,6vw,5.5rem);line-height:1.05;font-weight:800;color:#1a1410">
+            Meissa<br/><span class="grad">Fall</span>
+          </h1>
+          <div class="flex items-center gap-2 text-lg font-semibold text-[#6b6058] h-8">
+            <span id="hero-type"></span>
+            <span class="cursor-blink text-[#c0392b]">|</span>
+          </div>
+        </div>
+
+        <p class="text-[#6b6058] text-lg leading-relaxed max-w-lg">
+          Passionné par <strong class="text-[#1a1410]">le développement logiciel et les technologies web</strong>,je suis actuellement en <strong class="text-[#1a1410]">2ᵉ année de Génie Informatique à l'UNIPRO</strong>. J’aime concevoir des solutions robustes et créer des interfaces modernes, centrées sur l’expérience utilisateur. 
+        </p>
+
+        <div class="flex flex-wrap gap-4">
+          <a href="#projects" class="btn-ink inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm">
+            <span>Voir mes projets</span>
+            <svg class="w-4 h-4 relative z-10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+          </a>
+          <a href="#contact" class="btn-out inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm">
+            Me contacter
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </a>
+        </div>
+
+        <div class="flex gap-5 pt-2">
+          <div class="card px-5 py-4 text-center">
+            <div class="grad" style="font-family:Syne;font-size:2rem;font-weight:800">DUT</div>
+            <div class="text-xs text-[#6b6058] mt-1 font-medium">Dev Web & Mobile</div>
+          </div>
+          <div class="card px-5 py-4 text-center">
+            <div class="grad" style="font-family:Syne;font-size:2rem;font-weight:800">6+</div>
+            <div class="text-xs text-[#6b6058] mt-1 font-medium">Certifications</div>
+          </div>
+          <div class="card px-5 py-4 text-center">
+            <div class="grad" style="font-family:Syne;font-size:2rem;font-weight:800">5+</div>
+            <div class="text-xs text-[#6b6058] mt-1 font-medium">Projets réalisés</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AVATAR 3D -->
+      <div class="flex justify-center lg:justify-end" data-aos data-d="3">
+        <div class="tilt">
+          <div class="tilt-inner relative">
+            <div class="absolute animate-spin-slow pointer-events-none" style="inset:-20px;border-radius:50%;border:2px dashed #e8e0d4"></div>
+            <div class="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full flex items-center justify-center overflow-hidden shadow-2xl"
+                 style="background:linear-gradient(135deg,#1a1410 0%,#3d2b1a 50%,#c0392b 100%)">
+              <span style="font-family:Syne;font-size:5.5rem;font-weight:800;color:rgba(250,248,245,.9)">MF</span>
+            </div>
+            <div class="absolute -top-3 -right-4 card px-3 py-2 text-xs font-mono text-[#8b7355] border-l-2 border-l-[#c0392b] animate-float shadow-md">
+              &lt;Génie /&gt;
+            </div>
+            <div class="absolute -bottom-3 -left-4 card px-3 py-2 text-xs font-mono text-[#1a6b8a] border-l-2 border-l-[#1a6b8a] shadow-md" style="animation:floatAnim 7s ease-in-out infinite reverse">
+              { Informatique ☕ }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-center text-xs text-[#c8bfb0] font-mono">scroll ↓</div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ À PROPOS ═══════════ -->
+<section id="about" class="py-24">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-14" data-aos>
+      <div class="slabel mb-2">01 — À propos</div>
+      <h2 style="font-family:Syne;font-size:clamp(2rem,4vw,3.2rem);font-weight:800;color:#1a1410">Qui suis-<span class="grad">je ?</span></h2>
+    </div>
+    <div class="grid md:grid-cols-5 gap-12 items-start">
+      <div class="md:col-span-3 space-y-5" data-aos data-d="1">
+        <p class="text-[#6b6058] text-lg leading-relaxed">
+          Je suis <strong class="text-[#1a1410]">Meissa Fall</strong>, passionné par le développement logiciel. Après mon <strong class="text-[#1a1410]">DUT en Développement Web & Mobile</strong> obtenu à l'<strong class="text-[#c0392b]">Université Cheikh Anta Diop (UCAD)</strong>, je poursuis en <strong class="text-[#1a6b8a]">2ᵉ année Génie Informatique à l'UNIPRO</strong> (Univers Professionnel, Dakar).
+        </p>
+        <p class="text-[#6b6058] leading-relaxed">
+          Ma formation m'a apporté des compétences solides en programmation (Java, C, PHP), développement web (HTML, Javascript, CSS, Tailwind), bases de données et algorithmique avancée. Je maîtrise également Git/GitHub pour le travail collaboratif et m'intéresse aux technologies immersives AR/VR/MR.
+        </p>
+        <div class="flex flex-wrap gap-3 pt-2 text-sm">
+          <span class="flex items-center gap-2 text-[#6b6058]"><span class="text-[#c0392b]">📍</span>Dakar, Sénégal</span>
+          <span class="flex items-center gap-2 text-[#6b6058]"><span class="text-[#c0392b]">🎓</span>Génie Informatique · UNIPRO (2ᵉ année)</span>
+          <span class="flex items-center gap-2 text-[#6b6058]"><span class="text-[#c0392b]">📧</span>meissafall614@gmail.com</span>
+          <span class="flex items-center gap-2 text-[#6b6058]"><span class="text-[#c0392b]">📱</span>+221 76 406 45 40</span>
+        </div>
+        <div class="flex flex-wrap gap-3 pt-2">
+          <a href="https://www.linkedin.com/in/meissa-fall-a6b50730a" target="_blank" class="btn-out inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm">LinkedIn →</a>
+        </div>
+      </div>
+      <div class="md:col-span-2 grid grid-cols-2 gap-3" data-aos data-d="2">
+        <div class="tilt"><div class="tilt-inner card noise-ov relative p-5"><div class="text-2xl mb-2">☕</div><h3 class="font-semibold text-[#1a1410] text-sm mb-1">Java,Python & C</h3><p class="text-[#6b6058] text-xs leading-relaxed">Programmation structurée .</p></div></div>
+        <div class="tilt"><div class="tilt-inner card noise-ov relative p-5"><div class="text-2xl mb-2">🔍</div><h3 class="font-semibold text-[#1a1410] text-sm mb-1">Algorithmique</h3><p class="text-[#6b6058] text-xs leading-relaxed">Algo avancée, structures de données.</p></div></div>
+        <div class="tilt"><div class="tilt-inner card noise-ov relative p-5"><div class="text-2xl mb-2">🌐</div><h3 class="font-semibold text-[#1a1410] text-sm mb-1">Web Moderne</h3><p class="text-[#6b6058] text-xs leading-relaxed">HTML, CSS, Tailwind, JavaScript.</p></div></div>
+        <div class="tilt"><div class="tilt-inner card noise-ov relative p-5"><div class="text-2xl mb-2">🥽</div><h3 class="font-semibold text-[#1a1410] text-sm mb-1">AR / VR / MR</h3><p class="text-[#6b6058] text-xs leading-relaxed">Technologies immersives, Unity.</p></div></div>
+        <div class="tilt"><div class="tilt-inner card noise-ov relative p-5"><div class="text-2xl mb-2">🗄️</div><h3 class="font-semibold text-[#1a1410] text-sm mb-1">Bases de données</h3><p class="text-[#6b6058] text-xs leading-relaxed">MySQL, gestion de données.</p></div></div>
+        <div class="tilt"><div class="tilt-inner card noise-ov relative p-5"><div class="text-2xl mb-2">🔧</div><h3 class="font-semibold text-[#1a1410] text-sm mb-1">Git & GitHub</h3><p class="text-[#6b6058] text-xs leading-relaxed">Versioning, travail collaboratif.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ FORMATION ═══════════ -->
+<section id="formation" class="py-24 bg-[#f0ece4]">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-14" data-aos>
+      <div class="slabel mb-2">02 — Formation</div>
+      <h2 style="font-family:Syne;font-size:clamp(2rem,4vw,3.2rem);font-weight:800;color:#1a1410">Mon <span class="grad">parcours</span></h2>
+    </div>
+    <div class="max-w-2xl mx-auto">
+
+      <div class="flex gap-5 mb-0" data-aos data-d="1">
+        <div class="flex flex-col items-center">
+          <div class="tl-dot" style="background:#c0392b;box-shadow:0 0 0 4px rgba(192,57,43,.15),0 0 0 8px rgba(192,57,43,.07)"></div>
+          <div class="tl-line flex-1 mt-2" style="background:linear-gradient(to bottom,#c0392b,#e8e0d4)"></div>
+        </div>
+        <div class="card p-6 mb-6 flex-1 border-l-4 border-l-[#c0392b]">
+          <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
+            <div><h3 style="font-family:Syne;font-weight:700" class="text-[#1a1410] text-lg">Licence — Génie Informatique (2ᵉ année)</h3><p class="text-[#c0392b] text-sm font-mono mt-0.5 font-semibold">UNIPRO — Univers Professionnel, Dakar</p></div>
+            <span class="tag"> En cours</span>
+          </div>
+          <p class="text-[#6b6058] text-sm leading-relaxed">Algorithmique avancée, programmation Java et C, architecture logicielle, bases de données, génie logiciel .</p>
+          <div class="flex flex-wrap gap-2 mt-4"><span class="tag">Java</span><span class="tag">C</span><span class="tag">Algorithmique avancée</span><span class="tag">BDD</span><span class="tag"></span></div>
+        </div>
+      </div>
+
+      <div class="flex gap-5 mb-0" data-aos data-d="2">
+        <div class="flex flex-col items-center">
+          <div class="tl-dot" style="background:#1a6b8a;box-shadow:0 0 0 4px rgba(26,107,138,.15),0 0 0 8px rgba(26,107,138,.07)"></div>
+          <div class="tl-line flex-1 mt-2" style="background:linear-gradient(to bottom,#1a6b8a,#e8e0d4)"></div>
+        </div>
+        <div class="card p-6 mb-6 flex-1 border-l-4 border-l-[#1a6b8a]">
+          <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
+            <div><h3 style="font-family:Syne;font-weight:700" class="text-[#1a1410] text-lg">DUT — Développement Web & Mobile</h3><p class="text-[#1a6b8a] text-sm font-mono mt-0.5 font-semibold">Université Cheikh Anta Diop (UCAD), Dakar</p></div>
+            <span class="tag">2024 — 2026 · Diplômé ✓</span>
+          </div>
+          <p class="text-[#6b6058] text-sm leading-relaxed">Formation complète : HTML5, CSS3, JavaScript, PHP, MySQL,C, WordPress, gestion de projets web, travaux en équipe. Projet de fin de module : application de gestion de stock FLD.</p>
+          <div class="flex flex-wrap gap-2 mt-4"><span class="tag">HTML/CSS</span><span class="tag">JavaScript</span><span class="tag">PHP</span><span class="tag">MySQL</span><span class="tag">WordPress</span></div>
+        </div>
+      </div>
+
+      <div class="flex gap-5" data-aos data-d="3">
+        <div class="flex flex-col items-center">
+          <div class="tl-dot" style="background:#2d6a4f;box-shadow:0 0 0 4px rgba(45,106,79,.15)"></div>
+        </div>
+        <div class="card p-6 flex-1 border-l-4 border-l-[#2d6a4f]">
+          <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
+            <div><h3 style="font-family:Syne;font-weight:700" class="text-[#1a1410] text-lg">Baccalauréat Littéraire — Mention Assez Bien</h3><p style="color:#2d6a4f" class="text-sm font-mono mt-0.5 font-semibold">Lycée Darou Khoudoss</p></div>
+            <span class="tag">2023</span>
+          </div>
+          <p class="text-[#6b6058] text-sm">Baccalauréat série Littéraire avec mention Assez Bien.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ EXPÉRIENCES ═══════════ -->
+
+<!-- ═══════════ COMPÉTENCES ═══════════ -->
+<section id="skills" class="py-24 bg-[#f0ece4]">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-14" data-aos>
+      <div class="slabel mb-2">04 — Compétences</div>
+      <h2 style="font-family:Syne;font-size:clamp(2rem,4vw,3.2rem);font-weight:800;color:#1a1410">Compétences <span class="grad">techniques</span></h2>
+    </div>
+    <div class="grid md:grid-cols-2 gap-12">
+
+      <div data-aos data-d="1">
+        <h3 style="font-family:Syne;font-weight:700" class="text-[#1a1410] text-lg mb-6">Développement & Programmation</h3>
+        <div id="skill-section" class="space-y-4">
+          <div><div class="flex justify-between mb-1.5 text-sm"><span class="font-semibold text-[#1a1410] flex items-center gap-2">🌐 HTML5 / CSS3</span><span class="font-mono text-[#6b6058] text-xs"></span></div><div class="sk-track"><div class="sk-fill" data-w="88" style="background:linear-gradient(90deg,#c0392b,#8b7355)"></div></div></div>
+          <div><div class="flex justify-between mb-1.5 text-sm"><span class="font-semibold text-[#1a1410] flex items-center gap-2">🎨 Tailwind CSS</span><span class="font-mono text-[#6b6058] text-xs"></span></div><div class="sk-track"><div class="sk-fill" data-w="82" style="background:linear-gradient(90deg,#c0392b,#8b7355)"></div></div></div>
+          <div><div class="flex justify-between mb-1.5 text-sm"><span class="font-semibold text-[#1a1410] flex items-center gap-2">🔧 JavaScript</span><span class="font-mono text-[#6b6058] text-xs"></span></div><div class="sk-track"><div class="sk-fill" data-w="80" style="background:linear-gradient(90deg,#c0392b,#8b7355)"></div></div></div>
+          <div><div class="flex justify-between mb-1.5 text-sm"><span class="font-semibold text-[#1a1410] flex items-center gap-2">☕ Java</span><span class="font-mono text-[#6b6058] text-xs"></span></div><div class="sk-track"><div class="sk-fill" data-w="75" style="background:linear-gradient(90deg,#1a6b8a,#2d6a4f)"></div></div></div>
+          <div><div class="flex justify-between mb-1.5 text-sm"><span class="font-semibold text-[#1a1410] flex items-center gap-2">⚙️ C</span><span class="font-mono text-[#6b6058] text-xs"></span></div><div class="sk-track"><div class="sk-fill" data-w="68" style="background:linear-gradient(90deg,#1a6b8a,#2d6a4f)"></div></div></div>
+          <div><div class="flex justify-between mb-1.5 text-sm"><span class="font-semibold text-[#1a1410] flex items-center gap-2">🐍 Python</span><span class="font-mono text-[#6b6058] text-xs"></span></div><div class="sk-track"><div class="sk-fill" data-w="35" style="background:linear-gradient(90deg,#8b7355,#c8bfb0)"></div></div></div>
+          <div><div class="flex justify-between mb-1.5 text-sm"><span class="font-semibold text-[#1a1410] flex items-center gap-2">🗃️ PHP / MySQL</span><span class="font-mono text-[#6b6058] text-xs"></span></div><div class="sk-track"><div class="sk-fill" data-w="65" style="background:linear-gradient(90deg,#c0392b,#8b7355)"></div></div></div>
+          <div><div class="flex justify-between mb-1.5 text-sm"><span class="font-semibold text-[#1a1410] flex items-center gap-2">🔀 Git / GitHub</span><span class="font-mono text-[#6b6058] text-xs"></span></div><div class="sk-track"><div class="sk-fill" data-w="85" style="background:linear-gradient(90deg,#2d6a4f,#1a6b8a)"></div></div></div>
+        </div>
+      </div>
+
+      <div class="space-y-8" data-aos data-d="2">
+        <div>
+          <h3 style="font-family:Syne;font-weight:700" class="text-[#1a1410] text-lg mb-5">Outils & Environnement</h3>
+          <div class="flex flex-wrap gap-3">
+            <div class="card rounded-xl px-4 py-2.5 text-sm text-[#6b6058] flex items-center gap-2 font-medium">🎮 Unity (AR/VR/MR)</div>
+            <div class="card rounded-xl px-4 py-2.5 text-sm text-[#6b6058] flex items-center gap-2 font-medium">📝 WordPress / Adalo</div>
+            <div class="card rounded-xl px-4 py-2.5 text-sm text-[#6b6058] flex items-center gap-2 font-medium">🗺️ Cartographie & Géoloc</div>
+            <div class="card rounded-xl px-4 py-2.5 text-sm text-[#6b6058] flex items-center gap-2 font-medium">🎨 Canva /Adobe Photoshop / Adobe illustrator</div>
+            <div class="card rounded-xl px-4 py-2.5 text-sm text-[#6b6058] flex items-center gap-2 font-medium">📊 Word, Excel, PowerPoint</div>
+            <div class="card rounded-xl px-4 py-2.5 text-sm text-[#6b6058] flex items-center gap-2 font-medium">📋 Jotform</div>
+          </div>
+        </div>
+        <div>
+          <h3 style="font-family:Syne;font-weight:700" class="text-[#1a1410] text-lg mb-5">Langues</h3>
+          <div id="lang-section" class="space-y-3">
+            <div><div class="flex justify-between text-sm mb-1.5"><span class="font-semibold text-[#1a1410]">🇸🇳 Wolof</span><span class="font-mono text-[#6b6058] text-xs">Langue maternelle</span></div><div class="la-track"><div class="la-fill" data-w="100"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1.5"><span class="font-semibold text-[#1a1410]">🇫🇷 Français</span><span class="font-mono text-[#6b6058] text-xs">Courant</span></div><div class="la-track"><div class="la-fill" data-w="90"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1.5"><span class="font-semibold text-[#1a1410]">🇬🇧 Anglais</span><span class="font-mono text-[#6b6058] text-xs">Intermédiaire (lecture docs)</span></div><div class="la-track"><div class="la-fill" data-w="48"></div></div></div>
+          </div>
+        </div>
+        <div>
+          <h3 style="font-family:Syne;font-weight:700" class="text-[#1a1410] text-lg mb-4">Centres d'intérêt</h3>
+          <div class="flex flex-wrap gap-2">
+            <span class="tag">🥽 AR/VR</span><span class="tag">🗺️ Cartographie</span><span class="tag">🎮 Jeux vidéo</span><span class="tag">⚽ Football</span><span class="tag">📚 MOOCs</span><span class="tag">🎨 UI/UX</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ PROJETS ═══════════ -->
+<section id="projects" class="py-24">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    
+    <!-- TITRE -->
+    <div class="text-center mb-14" data-aos>
+      <div class="slabel mb-2">06 — Projets</div>
+      <h2 style="font-family:Syne;font-size:clamp(2rem,4vw,3.2rem);font-weight:800;color:#1a1410">
+        Mes <span class="grad">réalisations</span>
+      </h2>
+    </div>
+
+    <!-- GRID -->
+    <div class="grid md:grid-cols-3 gap-6">
+       <!-- 💬 Générateur de citations -->
+<div class="tilt" data-aos data-d="5">
+  <div class="tilt-inner card overflow-hidden noise-ov relative proj-wrap">
+
+    <!-- HEADER -->
+    <div class="h-44 flex items-center justify-center relative" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe)">
+      <div class="absolute inset-0" style="background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(108,92,231,.05) 12px,rgba(108,92,231,.05) 13px)"></div>
+      <span class="text-6xl relative z-10">💬</span>
+
+      <!-- OVERLAY -->
+      <div class="proj-ov">
+        <a href="TON_LIEN_PROJET/index.html" target="_blank"
+           class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M14 3h7v7M10 14L21 3M5 7v14h14"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- CONTENU -->
+    <div class="p-5">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="w-2 h-2 rounded-full bg-[#6c5ce7]"></span>
+        <span class="text-xs font-mono text-[#6c5ce7] font-semibold">
+          HTML · CSS · JavaScript
+        </span>
+      </div>
+
+      <h3 style="font-family:Syne;font-weight:700" class="text-[#1a1410] text-lg mb-2">
+        Générateur de Citations
+      </h3>
+
+      <p class="text-[#6b6058] text-sm leading-relaxed mb-4">
+        Mini application web moderne permettant de générer des citations en français avec animations, mode sombre et fonctionnalités interactives.
+      </p>
+
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tag">HTML</span>
+        <span class="tag">CSS</span>
+        <span class="tag">JavaScript</span>
+        <span class="tag">DOM</span>
+        <span class="tag">UI/UX</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+      <!-- 🚀 Plateforme Livraison -->
+      <div class="tilt" data-aos data-d="1">
+        <div class="tilt-inner card overflow-hidden noise-ov relative proj-wrap">
+          <div class="h-44 flex items-center justify-center relative" style="background:linear-gradient(135deg,#fef9f8,#fce8e4)">
+            <span class="text-6xl">🚀</span>
+          </div>
+
+          <div class="p-5">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-2 h-2 rounded-full bg-[#c0392b]"></span>
+              <span class="text-xs font-mono text-[#c0392b] font-semibold">Java · Équipe · 2026</span>
+            </div>
+
+            <h3 class="text-lg font-bold mb-2">Plateforme de Livraison</h3>
+
+            <p class="text-[#6b6058] text-sm mb-4">
+              Application Java développée en équipe pour gérer les livreurs, les missions et les opérations avec une architecture orientée objet.
+            </p>
+
+            <div class="flex flex-wrap gap-1.5">
+              <span class="tag">Java</span>
+              <span class="tag">OOP</span>
+              <span class="tag">Git</span>
+              <span class="tag">Équipe</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🧮 Calculateur -->
+      <div class="tilt" data-aos data-d="2">
+        <div class="tilt-inner card overflow-hidden noise-ov relative proj-wrap">
+          <div class="h-44 flex items-center justify-center relative" style="background:linear-gradient(135deg,#f5f9fb,#e4f0f5)">
+            <span class="text-6xl">🧮</span>
+          </div>
+
+          <div class="p-5">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-2 h-2 rounded-full bg-[#1a6b8a]"></span>
+              <span class="text-xs font-mono text-[#1a6b8a] font-semibold">Java · Personnel</span>
+            </div>
+
+            <h3 class="text-lg font-bold mb-2">Calculateur de Moyenne</h3>
+
+            <p class="text-[#6b6058] text-sm mb-4">
+              Programme Java permettant de calculer automatiquement les moyennes semestrielles avec gestion des coefficients et matières.
+            </p>
+
+            <div class="flex flex-wrap gap-1.5">
+              <span class="tag">Java</span>
+              <span class="tag">Algorithmique</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🛒 Gestion Stock -->
+      <div class="tilt" data-aos data-d="3">
+        <div class="tilt-inner card overflow-hidden noise-ov relative proj-wrap">
+          <div class="h-44 flex items-center justify-center relative" style="background:linear-gradient(135deg,#f5f9f7,#d4eadf)">
+            <span class="text-6xl">🛒</span>
+          </div>
+
+          <div class="p-5">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-2 h-2 rounded-full bg-[#2d6a4f]"></span>
+              <span class="text-xs font-mono text-[#2d6a4f] font-semibold">PHP · MySQL · 2025</span>
+            </div>
+
+            <h3 class="text-lg font-bold mb-2">Gestion de Stock FLD</h3>
+
+            <p class="text-[#6b6058] text-sm mb-4">
+              Application web de gestion de stock avec authentification, gestion des produits, commandes et utilisateurs.
+            </p>
+
+            <div class="flex flex-wrap gap-1.5">
+              <span class="tag">PHP</span>
+              <span class="tag">MySQL</span>
+              <span class="tag">PDO</span>
+            </div>
+          </div>
+        </div>
+      </div>
+         
+      <!-- 📚 Bibliothèque -->
+      <div class="tilt" data-aos data-d="4">
+        <div class="tilt-inner card overflow-hidden noise-ov relative proj-wrap">
+          <div class="h-44 flex items-center justify-center relative" style="background:linear-gradient(135deg,#8b7355,#c8bfb0)">
+            <span class="text-6xl">📚</span>
+          </div>
+
+          <div class="p-5">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-2 h-2 rounded-full bg-[#8b7355]"></span>
+              <span class="text-xs font-mono text-[#8b7355] font-semibold">Java · GUI</span>
+            </div>
+
+            <h3 class="text-lg font-bold mb-2">Gestion de Bibliothèque</h3>
+
+            <p class="text-[#6b6058] text-sm mb-4">
+              Application Java avec interface graphique pour gérer documents, adhérents, emprunts, retours et amendes avec stockage fichier.
+            </p>
+
+            <div class="flex flex-wrap gap-1.5">
+              <span class="tag">Java</span>
+              <span class="tag">OOP</span>
+              <span class="tag">Héritage</span>
+              <span class="tag">I/O</span>
+              <span class="tag">GUI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tilt" data-aos data-d="5">
+        <div class="tilt-inner card overflow-hidden noise-ov relative proj-wrap">
+          <div class="h-44 flex items-center justify-center relative" style="background:linear-gradient(135deg,#f5f9f7,#e4f0ea)">
+            <div class="absolute inset-0" style="background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(45,106,79,.04) 12px,rgba(45,106,79,.04) 13px)"></div>
+            <span class="text-6xl relative z-10">🏫</span>
+            <div class="proj-ov">
+              <a href="#" class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            </div>
+          </div>
+          <div class="p-5">
+            <div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 rounded-full" style="background:#2d6a4f"></span><span class="text-xs font-mono font-semibold" style="color:#2d6a4f">HTML/CSS/JS · UCAD</span></div>
+            <h3 style="font-family:Syne;font-weight:700" class="text-[#1a1410] text-lg mb-2">Plateforme de l'Institut</h3>
+            <p class="text-[#6b6058] text-sm leading-relaxed mb-4">Reproduction de la plateforme académique de l'institut CURI de l'UCAD en HTML5/CSS3/JavaScript. Interface moderne, responsive et accessible.</p>
+            <div class="flex flex-wrap gap-1.5"><span class="tag">HTML5</span><span class="tag">CSS3</span><span class="tag">JavaScript</span><span class="tag">Responsive</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ═══════════ CERTIFICATIONS ═══════════ -->
+<section class="py-24 bg-[#f0ece4]">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-14" data-aos>
+      <div class="slabel mb-2">06 — Certifications</div>
+      <h2 style="font-family:Syne;font-size:clamp(2rem,4vw,3.2rem);font-weight:800;color:#1a1410">Mes <span class="grad">certifications</span></h2>
+    </div>
+    <div class="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+      <div class="cert-card" data-aos data-d="1"><div class="text-xs font-mono text-[#6b6058] mb-1">Mai 2025 · UCAD</div><div class="font-semibold text-[#1a1410] text-sm">Technologies Immersives AR/VR/MR — Niveau 1</div></div>
+      <div class="cert-card" data-aos data-d="2"><div class="text-xs font-mono text-[#6b6058] mb-1">Avril 2025 · Coursera</div><div class="font-semibold text-[#1a1410] text-sm">Prompt Engineering — Generative AI for Marketing</div></div>
+      <div class="cert-card" data-aos data-d="3"><div class="text-xs font-mono text-[#6b6058] mb-1">Mai 2025 · Coursera</div><div class="font-semibold text-[#1a1410] text-sm">Introduction to HTML</div></div>
+      <div class="cert-card" data-aos data-d="4"><div class="text-xs font-mono text-[#6b6058] mb-1">Août 2025 · Coursera</div><div class="font-semibold text-[#1a1410] text-sm">Python for Beginners: Variables and Strings</div></div>
+      <div class="cert-card" data-aos data-d="1"><div class="text-xs font-mono text-[#6b6058] mb-1">Juillet 2025 · Bakeli</div><div class="font-semibold text-[#1a1410] text-sm">Introduction au Web</div></div>
+      <div class="cert-card" data-aos data-d="2"><div class="text-xs font-mono text-[#6b6058] mb-1">Septembre 2025 · FORCE-N</div><div class="font-semibold text-[#1a1410] text-sm">Attestation de Réussite — Informatique & Internet</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ CONTACT ═══════════ -->
+<section id="contact" class="py-24">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-14" data-aos>
+      <div class="slabel mb-2">07 — Contact</div>
+      <h2 style="font-family:Syne;font-size:clamp(2rem,4vw,3.2rem);font-weight:800;color:#1a1410">Travaillons <span class="grad">ensemble</span></h2>
+      <p class="text-[#6b6058] mt-3 max-w-md mx-auto text-sm">Disponible pour des stages, projets et opportunités professionnelles.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-12 items-start">
+      <div class="space-y-4" data-aos data-d="1">
+        <a href="mailto:meissafall614@gmail.com" class="card p-5 flex items-center gap-4 block hover:border-[#c0392b] transition-colors">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style="background:#fef3f2;border:1px solid #fce8e4">✉️</div>
+          <div><div class="text-xs font-mono text-[#6b6058] uppercase tracking-widest mb-0.5">Email</div><span class="text-[#1a1410] font-semibold text-sm hover:text-[#c0392b] transition-colors">meissafall614@gmail.com</span></div>
+        </a>
+        <a href="tel:+221764064540" class="card p-5 flex items-center gap-4 block hover:border-[#1a6b8a] transition-colors">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style="background:#f0f7fa;border:1px solid #daedf4">📱</div>
+          <div><div class="text-xs font-mono text-[#6b6058] uppercase tracking-widest mb-0.5">Téléphone</div><span class="text-[#1a1410] font-semibold text-sm">+221 76 406 45 40</span></div>
+        </a>
+        <div class="card p-5 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style="background:#f5f9f7;border:1px solid #d4eadf">📍</div>
+          <div><div class="text-xs font-mono text-[#6b6058] uppercase tracking-widest mb-0.5">Localisation</div><span class="text-[#1a1410] font-semibold text-sm">Malika, Dakar, Sénégal</span></div>
+        </div>
+       <div class="card p-5">
+          <div class="text-xs font-mono text-[#6b6058] uppercase tracking-widest mb-3">Réseaux sociaux</div>
+           <div class="flex gap-3">
+               <a href="https://www.linkedin.com/in/meissa-fall-dev-web/" target="_blank" class="social-ico">in</a>
+               <a href="https://github.com/meissafall614" target="_blank" class="social-ico"> <i class="fab fa-github"></i></a>
+               <!-- Placeholder for WhatsApp links -->
+               <a href="https://wa.me/221764064540" target="_blank" class="social-ico">
+               <i class="fab fa-whatsapp"></i> </a>
+            
+           </div>
+        </div>
+      </div>
+
+      <div data-aos data-d="2">
+        <form id="contact-form" class="card noise-ov relative p-6 space-y-5" novalidate>
+          <div>
+            <label for="name" class="block text-xs font-mono text-[#6b6058] uppercase tracking-widest mb-2">Nom complet</label>
+            <input type="text" id="name" name="name" required placeholder="Votre nom" autocomplete="name" class="form-fld w-full rounded-xl px-4 py-3 text-sm font-medium"/>
+            <p class="field-error text-red-500 text-xs mt-1.5" data-for="name"></p>
+          </div>
+          <div>
+            <label for="email" class="block text-xs font-mono text-[#6b6058] uppercase tracking-widest mb-2">Email</label>
+            <input type="email" id="email" name="email" required placeholder="votre@email.com" autocomplete="email" class="form-fld w-full rounded-xl px-4 py-3 text-sm font-medium"/>
+            <p class="field-error text-red-500 text-xs mt-1.5" data-for="email"></p>
+          </div>
+          <div>
+            <label for="message" class="block text-xs font-mono text-[#6b6058] uppercase tracking-widest mb-2">Message</label>
+            <textarea id="message" name="message" required placeholder="Décrivez votre projet ou demande..." rows="5" class="form-fld w-full rounded-xl px-4 py-3 text-sm font-medium resize-none"></textarea>
+            <p class="field-error text-red-500 text-xs mt-1.5" data-for="message"></p>
+          </div>
+          <button type="submit" class="btn-ink w-full py-3 rounded-xl font-semibold text-sm">
+            <span id="submit-text">Envoyer le message ✉️</span>
+          </button>
+          <p class="form-status text-center text-sm font-semibold" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+
+<footer style="background:#181818" class="pt-12 pb-6">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
+      <div class="flex items-center gap-4 mb-4 md:mb-0">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-[#c0392b] to-[#1a6b8a] shadow-lg">
+          <span style="font-family:Syne;font-size:1.2rem;font-weight:800;color:#faf8f5">MF</span>
+        </div>
+        <div>
+          <div style="font-family:Syne;font-weight:800;color:#faf8f5;font-size:1.1rem">Meissa Fall</div>
+          <div class="text-xs font-mono text-[#c8bfb0]">Développeur Web & Mobile</div>
+        </div>
+      </div>
+      <div class="flex gap-4 mb-4 md:mb-0">
+        <a href="https://www.linkedin.com/in/meissa-fall-dev-web/" target="_blank" class="social-ico" style="font-size:1.2rem;background:linear-gradient(135deg,#c0392b,#1a6b8a);color:#fff;border:none;"><i class="fab fa-linkedin-in"></i></a>
+        <a href="https://github.com/meissafall614" target="_blank" class="social-ico" style="font-size:1.2rem;background:linear-gradient(135deg,#1a6b8a,#2d6a4f);color:#fff;border:none;"><i class="fab fa-github"></i></a>
+        <a href="https://wa.me/221764064540" target="_blank" class="social-ico" style="font-size:1.2rem;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;"><i class="fab fa-whatsapp"></i></a>
+      </div>
+      <nav class="flex flex-wrap items-center justify-center gap-5 text-xs">
+        <a href="#about" class="hover:text-[#c0392b] text-[#faf8f5] transition-colors">À propos</a>
+        <a href="#formation" class="hover:text-[#c0392b] text-[#faf8f5] transition-colors">Formation</a>
+        <a href="#skills" class="hover:text-[#c0392b] text-[#faf8f5] transition-colors">Compétences</a>
+        <a href="#projects" class="hover:text-[#c0392b] text-[#faf8f5] transition-colors">Projets</a>
+        <a href="#contact" class="hover:text-[#c0392b] text-[#faf8f5] transition-colors">Contact</a>
+      </nav>
+    </div>
+    <div style="height:1px;background:rgba(250,248,245,.08)" class="mb-6"></div>
+    <div class="flex flex-col items-center gap-2 text-xs" style="color:rgba(250,248,245,.4)">
+      <p>©2026 Meissa Fall · Tous droits réservés</p>
+      <p class="font-mono">HTML · <span style="color:#c0392b;font-weight:600">Tailwind CSS</span> · Three.js ⚡</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════ JS ═══════════ -->
+<script>
+// ── LOADING
+(function(){
+  const screen=document.getElementById('loading'),txt=document.getElementById('load-text'),bar=document.getElementById('load-bar');
+  const msgs=['Chargement...','Initialisation...','Presque prêt...'];
+  let mi=0,ci=0,d=false;
+  function type(){
+    const m=msgs[mi];
+    txt.textContent=d?m.slice(0,ci-1):m.slice(0,ci+1);
+    d?ci--:ci++;
+    let s=d?50:90;
+    if(!d&&ci===m.length){s=1000;d=true;}
+    else if(d&&ci===0){d=false;mi=(mi+1)%msgs.length;s=300;}
+    setTimeout(type,s);
+  }
+  setTimeout(type,200);
+  let p=0;
+  const iv=setInterval(()=>{p=Math.min(p+Math.random()*18,92);bar.style.width=p+'%';},120);
+  setTimeout(()=>{clearInterval(iv);bar.style.width='100%';
+    setTimeout(()=>{screen.classList.add('out');setTimeout(()=>screen.style.display='none',700);},200);
+  },2600);
+})();
+
+// ── THREE.JS 3D HERO
+(function(){
+  const canvas=document.getElementById('hero-canvas');
+  const W=()=>canvas.parentElement.offsetWidth;
+  const H=()=>canvas.parentElement.offsetHeight;
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(60,W()/H(),0.1,100);
+  camera.position.z=5;
+  function onResize(){renderer.setSize(W(),H());camera.aspect=W()/H();camera.updateProjectionMatrix();}
+  onResize();
+  window.addEventListener('resize',onResize);
+
+  const mats=[
+    new THREE.MeshPhongMaterial({color:0xc0392b,transparent:true,opacity:.12,wireframe:true}),
+    new THREE.MeshPhongMaterial({color:0x1a6b8a,transparent:true,opacity:.10,wireframe:true}),
+    new THREE.MeshPhongMaterial({color:0x8b7355,transparent:true,opacity:.08,wireframe:true}),
+  ];
+  const shapes=[];
+  [[new THREE.IcosahedronGeometry(.6,0),0],[new THREE.OctahedronGeometry(.5,0),1],[new THREE.TetrahedronGeometry(.55,0),2],[new THREE.IcosahedronGeometry(.35,0),0],[new THREE.OctahedronGeometry(.28,0),1]].forEach(([g,mi])=>{
+    const m=new THREE.Mesh(g,mats[mi]);
+    m.position.set((Math.random()-.5)*8,(Math.random()-.5)*5,(Math.random()-.5)*3-1);
+    m.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,0);
+    m.userData={vy:(Math.random()-.5)*.003,vx:(Math.random()-.5)*.002,rx:(Math.random()-.5)*.005,ry:(Math.random()-.5)*.005};
+    scene.add(m);shapes.push(m);
+  });
+  scene.add(new THREE.AmbientLight(0xffffff,.4));
+  const pl=new THREE.PointLight(0xc0392b,.8,20);pl.position.set(3,3,3);scene.add(pl);
+  let mx=0,my=0;
+  document.addEventListener('mousemove',e=>{mx=(e.clientX/window.innerWidth-.5)*.4;my=(e.clientY/window.innerHeight-.5)*.2;});
+  (function anim(){
+    requestAnimationFrame(anim);
+    shapes.forEach(m=>{
+      m.position.y+=m.userData.vy;m.position.x+=m.userData.vx;
+      m.rotation.x+=m.userData.rx;m.rotation.y+=m.userData.ry;
+      if(Math.abs(m.position.y)>3.5)m.userData.vy*=-1;
+      if(Math.abs(m.position.x)>5)m.userData.vx*=-1;
+    });
+    camera.position.x+=(mx-camera.position.x)*.05;
+    camera.position.y+=(-my-camera.position.y)*.05;
+    renderer.render(scene,camera);
+  })();
+})();
+
+// ── HERO TYPING
+(function(){
+  const el=document.getElementById('hero-type');
+  const roles=['Développeur Web & Mobile','Étudiant Génie Informatique','Passionné Java & Tailwind CSS','Créateur de solutions numériques'];
+  let ri=0,ci=0,d=false;
+  function type(){
+    const r=roles[ri];
+    el.textContent=d?r.slice(0,ci-1):r.slice(0,ci+1);
+    d?ci--:ci++;
+    let s=d?55:100;
+    if(!d&&ci===r.length){s=1800;d=true;}
+    else if(d&&ci===0){d=false;ri=(ri+1)%roles.length;s=350;}
+    setTimeout(type,s);
+  }
+  setTimeout(type,3000);
+})();
+
+// ── MOBILE NAV
+(function(){
+  const btn=document.getElementById('mob-btn'),menu=document.getElementById('mob-menu'),o=document.getElementById('ico-open'),c=document.getElementById('ico-close');
+  btn.addEventListener('click',()=>{menu.classList.toggle('hidden');o.classList.toggle('hidden');c.classList.toggle('hidden');});
+  menu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{menu.classList.add('hidden');o.classList.remove('hidden');c.classList.add('hidden');}));
+})();
+
+// ── NAV ACTIVE
+(function(){
+  const links=document.querySelectorAll('.nl');
+  function up(){
+    let cur='';
+    document.querySelectorAll('[id]').forEach(s=>{if(window.scrollY>=s.offsetTop-130)cur=s.id;});
+    links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+cur));
+  }
+  window.addEventListener('scroll',up,{passive:true});up();
+})();
+
+// ── SMOOTH SCROLL
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',function(e){
+    const t=document.querySelector(this.getAttribute('href'));
+    if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth',block:'start'});}
+  });
+});
+
+// ── AOS
+(function(){
+  const obs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on');}),{threshold:.1,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('[data-aos]').forEach(el=>obs.observe(el));
+
+  // Skill bars
+  const skObs=new IntersectionObserver(entries=>entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.sk-fill').forEach(b=>setTimeout(()=>b.style.width=b.dataset.w+'%',300));
+      skObs.unobserve(e.target);
+    }
+  }),{threshold:.2});
+  const ss=document.getElementById('skill-section');
+  if(ss)skObs.observe(ss);
+
+  // Lang bars
+  const laObs=new IntersectionObserver(entries=>entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.la-fill').forEach(b=>setTimeout(()=>b.style.width=b.dataset.w+'%',400));
+      laObs.unobserve(e.target);
+    }
+  }),{threshold:.2});
+  const ls=document.getElementById('lang-section');
+  if(ls)laObs.observe(ls);
+})();
+
+// ── FORM
+(function(){
+  const form=document.getElementById('contact-form');
+  if(!form)return;
+  const status=form.querySelector('.form-status'),submitText=document.getElementById('submit-text');
+  const valEmail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  function setErr(id,msg){const n=form.querySelector(`.field-error[data-for="${id}"]`);if(n)n.textContent=msg||'';}
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    const name=form.name.value.trim(),email=form.email.value.trim(),message=form.message.value.trim();
+    let ok=true;
+    setErr('name');setErr('email');setErr('message');
+    if(name.length<2){setErr('name','Nom invalide (min. 2 caractères).');ok=false;}
+    if(!valEmail(email)){setErr('email','Email invalide.');ok=false;}
+    if(message.length<10){setErr('message','Message trop court (min. 10 caractères).');ok=false;}
+    if(!ok)return;
+    const btn=form.querySelector('button[type="submit"]');
+    btn.disabled=true;submitText.textContent='⏳ Envoi...';
+    setTimeout(()=>{
+      status.textContent='✅ Merci ! Je vous réponds très rapidement.';
+      status.style.color='#2d6a4f';
+      form.reset();btn.disabled=false;submitText.textContent='Envoyer le message ✉️';
+      setTimeout(()=>{status.textContent='';status.style.color='';},6000);
+    },1400);
+  });
+})();
+</script>
+</body>
+</html>
