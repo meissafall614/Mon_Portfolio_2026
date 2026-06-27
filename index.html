@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr" class="scroll-smooth" data-theme="light">
 <head>
   <meta charset="UTF-8"/>
@@ -985,12 +985,11 @@ document.getElementById("contact-form").addEventListener("submit",function(event
   event.preventDefault();
   const status=document.getElementById("status-message");
   status.textContent="Envoi en cours...";
-  emailjs.sendForm("service_5ai690m","template_xmrx1eu",this)
+  emailjs.sendForm("service_21w2v2f","template_xmrx1eu",this)
     .then(()=>{status.textContent="✅ Message envoyé avec succès !";this.reset();})
     .catch(error=>{status.textContent="❌ Erreur lors de l'envoi.";console.error(error);});
 });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script>(function(){emailjs.init("rkO3KRFYHYNyxTfBu");})();</script>
 </body>
 </html>
